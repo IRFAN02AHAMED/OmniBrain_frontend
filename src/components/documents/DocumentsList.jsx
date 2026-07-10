@@ -1,24 +1,37 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, Paper, TableRow, IconButton, Button, Tooltip,
   CircularProgress, Alert, Snackbar
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useGoogleLogin } from '@react-oauth/google';
 import MaterialIcon from '../common/MaterialIcon';
 import useMindMapStore from '../../store/useMindMapStore';
 import useDocumentStore from '../../store/useDocumentStore';
-import { uploadFileToGoogleDrive } from '../../services/googleDriveService';
+import documentService from '../../services/documentService';
 
 const DocumentsList = () => {
   const navigate = useNavigate();
-  const { documents, googleAccessToken, setGoogleAccessToken, addDocument, removeDocument, uploading, setUploading, error, setError } = useDocumentStore();
+  const {
+    documents,
+    addDocument,
+    removeDocument,
+    uploading,
+    setUploading,
+    loadingDocuments,
+    error,
+    setError,
+    loadDocuments,
+  } = useDocumentStore();
 
   const [successSnackbar, setSuccessSnackbar] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [loadDocuments]);
 
   const handleGenerateMindMap = (doc) => {
     useMindMapStore.getState().resetMindMap();
@@ -32,14 +45,12 @@ const DocumentsList = () => {
     }
   };
 
-  const startUpload = async (file, token) => {
+  const startUpload = async (file) => {
     setUploading(true);
     setError(null);
     try {
-      // Direct API Call to Google Drive
-      const gDriveRes = await uploadFileToGoogleDrive(file, token);
+      await documentService.uploadGlobalDocumentToDrive(file);
 
-      // Add to store on success
       const formatSize = (bytes) => {
         if (!bytes) return '1.0 MB';
         const kb = bytes / 1024;
@@ -50,49 +61,28 @@ const DocumentsList = () => {
       const fileExt = file.name.slice(file.name.lastIndexOf('.') + 1);
 
       const newDoc = {
-        id: gDriveRes.id || `doc-${Date.now()}`,
+        id: `drive-pending-${Date.now()}`,
         name: file.name,
         size: formatSize(file.size),
-        type: fileExt.toLowerCase()
+        type: fileExt.toLowerCase(),
+        processingStatus: 'pending_sync',
       };
 
       addDocument(newDoc);
-      setSuccessMessage(`"${file.name}" uploaded successfully to Google Drive!`);
+      setSuccessMessage(`"${file.name}" uploaded to Google Drive Global Documents. Click "Sync with Drive" to embed and store it in the database.`);
       setSuccessSnackbar(true);
     } catch (err) {
-      setError(err.message || 'Upload failed');
+      setError(err?.response?.data?.detail || err.message || 'Upload failed');
     } finally {
       setUploading(false);
     }
   };
 
-  const [pendingFile, setPendingFile] = useState(null);
-
-  const loginGoogle = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      setGoogleAccessToken(tokenResponse.access_token);
-      if (pendingFile) {
-        startUpload(pendingFile, tokenResponse.access_token);
-        setPendingFile(null);
-      }
-    },
-    onError: (err) => {
-      setError('Google Login Failed: ' + (err?.message || 'Unknown error'));
-      setPendingFile(null);
-    },
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly'
-  });
-
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!googleAccessToken) {
-      setPendingFile(file);
-      loginGoogle();
-    } else {
-      startUpload(file, googleAccessToken);
-    }
+    startUpload(file);
 
     // Reset input value so same file can be selected again
     e.target.value = '';
@@ -115,7 +105,7 @@ const DocumentsList = () => {
             ref={fileInputRef}
             onChange={handleFileChange}
             style={{ display: 'none' }}
-            accept=".pdf,.docx,.txt,.md,.pptx,.csv,.xlsx"
+            accept=".pdf,.docx,.txt,.md,.csv"
           />
           <Button
             variant="contained"
@@ -150,6 +140,12 @@ const DocumentsList = () => {
         <Alert severity="error" sx={{ mb: 3, bgcolor: 'rgba(186,26,26,0.1)', color: '#FF6B6B', border: '1px solid rgba(186,26,26,0.2)' }}>
           {error}
         </Alert>
+      )}
+
+      {loadingDocuments && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress size={28} />
+        </Box>
       )}
 
       <TableContainer

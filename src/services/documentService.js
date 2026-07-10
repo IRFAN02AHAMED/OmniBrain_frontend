@@ -1,41 +1,58 @@
 import apiClient from './apiClient';
-import { GLOBAL_DOCUMENTS } from '../data/globalDocuments';
+
+const formatSize = (bytes) => {
+  const numericBytes = Number(bytes || 0);
+  if (!numericBytes) return '0 KB';
+  const kb = numericBytes / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  return `${(kb / 1024).toFixed(1)} MB`;
+};
+
+const getFileType = (fileName = '', mimeType = '') => {
+  const dotIndex = fileName.lastIndexOf('.');
+  if (dotIndex !== -1) {
+    return fileName.slice(dotIndex + 1).toLowerCase();
+  }
+
+  if (mimeType?.includes('/')) {
+    return mimeType.split('/').pop().toLowerCase();
+  }
+
+  return 'file';
+};
 
 export const documentService = {
-  /**
-   * Fetches global document records.
-   */
   getGlobalDocuments: async () => {
-    // Simulated promise delay
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    
-    // Real API integration (commented out for reference):
-    // const response = await apiClient.get('/documents/global');
-    // return response.data;
-    
-    return GLOBAL_DOCUMENTS;
+    const response = await apiClient.get('/documents/');
+    return (response.data || []).map((document) => ({
+      id: String(document.id),
+      name: document.original_file_name || document.file_name,
+      size: formatSize(document.file_size),
+      type: getFileType(document.original_file_name || document.file_name, document.mime_type),
+      sourceType: document.source_type,
+      processingStatus: document.processing_status,
+      chunkCount: document.chunk_count,
+      driveFileId: document.drive_file_id,
+      driveWebUrl: document.drive_web_url,
+    }));
   },
 
-  /**
-   * Simulates uploading document files.
-   * @param {Array<File>} files 
-   */
-  uploadDocuments: async (files) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    // Real API integration:
-    // const formData = new FormData();
-    // files.forEach(file => formData.append('files', file));
-    // const response = await apiClient.post('/documents/upload', formData, {
-    //   headers: { 'Content-Type': 'multipart/form-data' }
-    // });
-    // return response.data;
+  uploadGlobalDocumentToDrive: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
 
-    return files.map(file => ({
-      name: file.name,
-      size: file.size,
-      uploadedAt: new Date().toISOString()
-    }));
-  }
+    const response = await apiClient.post('/google/drive/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  },
+
+  syncGlobalDocuments: async () => {
+    const response = await apiClient.post('/sync/global');
+    return response.data;
+  },
 };
 export default documentService;

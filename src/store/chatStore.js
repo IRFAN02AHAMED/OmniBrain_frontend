@@ -16,6 +16,17 @@ export const useChatStore = create((set, get) => ({
   setActiveChatId: (id) => set({ activeChatId: id, activeRoute: 'chat' }),
   setChatInput: (input) => set({ chatInput: input }),
   setChatError: (chatError) => set({ chatError }),
+  resetChatState: () => set({
+    chats: [],
+    messages: {},
+    activeChatId: null,
+    chatInput: '',
+    uploadedAttachments: [],
+    activeRoute: 'chat',
+    loadingChats: false,
+    sendingMessage: false,
+    chatError: null,
+  }),
 
   renameChat: (chatId, newTitle) => set((state) => ({
     chats: state.chats.map((c) => c.id === chatId ? { ...c, title: newTitle } : c)
