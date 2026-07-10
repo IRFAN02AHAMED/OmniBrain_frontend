@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { lightTheme, darkTheme } from './theme/index';
 import { useThemeStore } from './store/themeStore';
+import { useAppStore } from './store/store';
 import ProtectedRoute from './components/routing/ProtectedRoute';
 
 import SignInPage from './pages/SignInPage';
@@ -14,7 +15,14 @@ import MindMapPage from './pages/MindMapPage';
 
 function App() {
   const { mode } = useThemeStore();
+  const hydrateCurrentUser = useAppStore((state) => state.hydrateCurrentUser);
   const activeMuiTheme = mode === 'dark' ? darkTheme : lightTheme;
+
+  useEffect(() => {
+    if (localStorage.getItem('auth_token')) {
+      hydrateCurrentUser();
+    }
+  }, [hydrateCurrentUser]);
 
   return (
     <ThemeProvider theme={activeMuiTheme}>

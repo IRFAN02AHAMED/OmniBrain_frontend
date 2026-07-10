@@ -56,12 +56,12 @@ const PlusMenu = ({ anchorEl, open, onClose }) => {
           accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.ppt,.pptx"
         />
 
-        <MenuItem onClick={handleUploadClick}>
+        {/* <MenuItem onClick={handleUploadClick}>
           <ListItemIcon>
             <MaterialIcon name="upload_file" style={{ fontSize: '20px' }} />
           </ListItemIcon>
           <ListItemText primary="Upload Document" primaryTypographyProps={{ fontSize: '14px' }} />
-        </MenuItem>
+        </MenuItem> */}
 
         <MenuItem onClick={handleConnectorsHover}>
           <ListItemIcon>

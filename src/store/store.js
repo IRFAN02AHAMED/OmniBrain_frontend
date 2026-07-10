@@ -1,5 +1,26 @@
 import { create } from 'zustand';
 import { RECENT_CHATS, CHAT_MESSAGES, AVAILABLE_MODELS, CURRENT_USER } from '../dummy/dummyData';
+import authService from '../services/authService';
+
+const USER_STORAGE_KEY = 'omnibrain_user';
+
+const readStoredUser = () => {
+  try {
+    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    console.warn('Failed to parse stored user profile.', error);
+    return null;
+  }
+};
+
+const persistUser = (user) => {
+  if (!user) {
+    localStorage.removeItem(USER_STORAGE_KEY);
+    return;
+  }
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+};
 
 export const useAppStore = create((set, get) => ({
   // View State (routing simulation)
@@ -7,8 +28,8 @@ export const useAppStore = create((set, get) => ({
   setCurrentView: (view) => set({ currentView: view }),
 
   // Auth State
-  user: CURRENT_USER,
-  isLoggedIn: false,
+  user: readStoredUser() || CURRENT_USER,
+  isLoggedIn: !!localStorage.getItem('auth_token'),
   otpEmail: 'alex@omnibrain.ai',
   otpCode: '',
   otpTimer: 300, // 5 minutes
@@ -36,12 +57,42 @@ export const useAppStore = create((set, get) => ({
     if (timerIntervalId) clearInterval(timerIntervalId);
     set({ timerIntervalId: null });
   },
-  login: () => set({ isLoggedIn: true, currentView: 'chat' }),
+  setUser: (user) => {
+    persistUser(user);
+    set({ user });
+  },
+  hydrateCurrentUser: async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const profile = await authService.fetchCurrentUser();
+      persistUser(profile);
+      set({ user: profile, isLoggedIn: true });
+      return profile;
+    } catch (error) {
+      console.error('Failed to hydrate current user profile.', error);
+      return null;
+    }
+  },
+  login: (user = null) => {
+    if (user) {
+      persistUser(user);
+    }
+    set((state) => ({
+      isLoggedIn: true,
+      currentView: 'chat',
+      user: user || state.user,
+    }));
+  },
   logout: () => {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem(USER_STORAGE_KEY);
     localStorage.removeItem('omnibrain-documents');
     localStorage.removeItem('omnibrain-mindmap');
-    set({ isLoggedIn: false, currentView: 'signin' });
+    set({ isLoggedIn: false, currentView: 'signin', user: CURRENT_USER });
   },
 
   // Chat State

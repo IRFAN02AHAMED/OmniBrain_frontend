@@ -12,12 +12,16 @@ import useMindMapStore from '../../store/useMindMapStore';
 const UserProfileMenu = () => {
   const navigate = useNavigate();
   const logout = useAppStore((state) => state.logout);
+  const user = useAppStore((state) => state.user);
   const resetChatState = useChatStore((state) => state.resetChatState);
   const resetDocumentStore = useDocumentStore((state) => state.resetStore);
   const resetMindMap = useMindMapStore((state) => state.resetMindMap);
   const { mode, toggleTheme } = useThemeStore();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const displayName = user?.full_name || user?.name || 'OmniBrain User';
+  const displayEmail = user?.email || 'No email available';
+  const avatarUrl = user?.profile_picture || user?.avatarUrl || '';
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -54,8 +58,8 @@ const UserProfileMenu = () => {
         }}
       >
         <Avatar
-          src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&h=80"
-          alt="Aman Kumar"
+          src={avatarUrl}
+          alt={displayName}
           sx={{
             width: 38,
             height: 38,
@@ -74,10 +78,10 @@ const UserProfileMenu = () => {
             }}
             noWrap
           >
-            Aman Kumar
+            {displayName}
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '10.5px' }} noWrap>
-            aman.kumar@gmail.com
+            {displayEmail}
           </Typography>
         </Box>
         <MaterialIcon name="expand_more" style={{ color: '#94A3B8', fontSize: '18px' }} />
@@ -99,7 +103,7 @@ const UserProfileMenu = () => {
           }
         }}
       >
-        <MenuItem onClick={handleClose}>
+        {/* <MenuItem onClick={handleClose}>
           <ListItemIcon>
             <MaterialIcon name="person" style={{ fontSize: '20px' }} />
           </ListItemIcon>
@@ -111,7 +115,7 @@ const UserProfileMenu = () => {
             <MaterialIcon name="settings" style={{ fontSize: '20px' }} />
           </ListItemIcon>
           <ListItemText primary="Settings" />
-        </MenuItem>
+        </MenuItem> */}
 
 
         <MenuItem onClick={handleLogout}>

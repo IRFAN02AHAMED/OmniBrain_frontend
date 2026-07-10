@@ -56,6 +56,11 @@ export const authService = {
       token: 'mock_jwt_google_token',
       user: CURRENT_USER
     };
-  }
+  },
+
+  fetchCurrentUser: async () => {
+    const response = await apiClient.get('/auth/google/me/v2');
+    return response.data;
+  },
 };
 export default authService;
