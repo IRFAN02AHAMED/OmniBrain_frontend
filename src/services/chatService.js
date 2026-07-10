@@ -55,6 +55,49 @@ export const chatService = {
     };
   },
 
+  streamMessage: async ({ chatId, text, title, onEvent }) => {
+    const token = localStorage.getItem('auth_token');
+    const response = await fetch(`${apiClient.defaults.baseURL}/chats/send/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        session_id: chatId ? Number(chatId) : null,
+        content: text,
+        title,
+      }),
+    });
+
+    if (!response.ok || !response.body) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Failed to stream message.');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        onEvent(JSON.parse(line));
+      }
+    }
+
+    if (buffer.trim()) {
+      onEvent(JSON.parse(buffer));
+    }
+  },
+
   /**
    * Get available AI Models.
    */

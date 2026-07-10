@@ -74,7 +74,7 @@ const formatBotText = (text) => {
   });
 };
 
-const AssistantMessageCard = ({ text }) => {
+const AssistantMessageCard = ({ text, isStreaming = false }) => {
   return (
     <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
       <Box
@@ -128,6 +128,15 @@ const AssistantMessageCard = ({ text }) => {
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
           {formatBotText(text)}
         </Box>
+
+        {isStreaming && (
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary', fontStyle: 'italic', mt: 0.5 }}
+          >
+            Thinking...
+          </Typography>
+        )}
 
         {/* Footer Actions */}
         <MessageActions />

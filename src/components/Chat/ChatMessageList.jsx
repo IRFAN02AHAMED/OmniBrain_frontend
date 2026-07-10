@@ -32,7 +32,7 @@ const ChatMessageList = ({ messages = [] }) => {
           {msg.sender === 'user' ? (
             <UserMessageCard text={msg.text} time={msg.time} />
           ) : (
-            <AssistantMessageCard text={msg.text} />
+            <AssistantMessageCard text={msg.text} isStreaming={msg.isStreaming} />
           )}
         </Box>
       ))}
