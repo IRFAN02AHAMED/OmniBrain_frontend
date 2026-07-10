@@ -32,7 +32,7 @@ export const useChatStore = create((set, get) => ({
     }));
   },
 
-  sendMessage: (text) => {
+  sendMessage: async (text) => {
     const { activeChatId, messages } = get();
     if (!activeChatId) return;
 
@@ -55,21 +55,31 @@ export const useChatStore = create((set, get) => ({
       uploadedAttachments: [] // Clear composer attachments on send
     }));
 
-    // Mock response trigger
-    setTimeout(() => {
-      const botMsg = {
-        id: `msg-${Date.now() + 1}`,
-        sender: 'bot',
-        text: `Based on your request "${text}", here is an intelligent analysis generated from your active documents and sources.`,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      set((state) => ({
-        messages: {
-          ...state.messages,
-          [activeChatId]: [...(state.messages[activeChatId] || []), botMsg]
-        }
-      }));
-    }, 1200);
+    // Import sourceStore dynamically to avoid circular dependencies
+    const { useSourceStore } = await import('./sourceStore');
+    const sourceState = useSourceStore.getState();
+
+    const payload = {
+      message: text,
+      content: text,
+      use_global_documents: sourceState.globalDocumentsEnabled,
+      use_chat_documents: sourceState.chatDocumentsFolderEnabled,
+      use_google_drive: sourceState.googleDriveEnabled,
+      use_jira: sourceState.jiraEnabled,
+      use_github: sourceState.githubEnabled,
+      selected_file_ids: sourceState.getSelectedFileIds(),
+      selected_folder_ids: []
+    };
+
+    const { chatService } = await import('../services/chatService');
+    const botResponse = await chatService.sendMessage(activeChatId, payload);
+
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [activeChatId]: [...(state.messages[activeChatId] || []), botResponse]
+      }
+    }));
   },
 
   addAttachments: (files) => set((state) => ({

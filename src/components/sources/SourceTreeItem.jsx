@@ -40,6 +40,8 @@ const SourceTreeItem = ({ node, level = 0 }) => {
   const handleExpand = () => {
     if (isFolder) {
       toggleExpandNode(node.id);
+    } else if (node.webViewLink) {
+      window.open(node.webViewLink, '_blank');
     }
   };
 

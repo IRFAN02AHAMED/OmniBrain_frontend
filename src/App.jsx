@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { lightTheme, darkTheme } from './theme/index';
 import { useThemeStore } from './store/themeStore';
@@ -13,6 +13,18 @@ function App() {
   const { mode } = useThemeStore();
   const { currentView, isLoggedIn } = useAppStore();
   const { activeRoute } = useChatStore();
+
+  useEffect(() => {
+    if (window.location.pathname === '/auth/callback') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      if (token) {
+        useAppStore.getState().setAuthFromToken(token);
+        // Clear token from URL
+        window.history.replaceState({}, document.title, '/');
+      }
+    }
+  }, []);
 
   const renderView = () => {
     if (!isLoggedIn) {

@@ -8,7 +8,7 @@ export const useAppStore = create((set, get) => ({
 
   // Auth State
   user: CURRENT_USER,
-  isLoggedIn: false,
+  isLoggedIn: !!localStorage.getItem('access_token'),
   otpEmail: 'alex@omnibrain.ai',
   otpCode: '',
   otpTimer: 300, // 5 minutes
@@ -37,7 +37,14 @@ export const useAppStore = create((set, get) => ({
     set({ timerIntervalId: null });
   },
   login: () => set({ isLoggedIn: true, currentView: 'chat' }),
-  logout: () => set({ isLoggedIn: false, currentView: 'signin' }),
+  setAuthFromToken: (token) => {
+    localStorage.setItem('access_token', token);
+    set({ isLoggedIn: true, currentView: 'chat' });
+  },
+  logout: () => {
+    localStorage.removeItem('access_token');
+    set({ isLoggedIn: false, currentView: 'signin' });
+  },
 
   // Chat State
   models: AVAILABLE_MODELS,

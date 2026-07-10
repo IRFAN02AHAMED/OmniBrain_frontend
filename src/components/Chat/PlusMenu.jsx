@@ -3,6 +3,8 @@ import { Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import MaterialIcon from '../common/MaterialIcon';
 import ConnectorSubmenu from '../connectors/ConnectorSubmenu';
 import { useChatStore } from '../../store/chatStore';
+import { useSourceStore } from '../../store/sourceStore';
+import documentService from '../../services/documentService';
 
 const PlusMenu = ({ anchorEl, open, onClose }) => {
   const addAttachments = useChatStore((state) => state.addAttachments);
@@ -19,10 +21,17 @@ const PlusMenu = ({ anchorEl, open, onClose }) => {
     }
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = async (event) => {
     const files = Array.from(event.target.files);
     if (files.length > 0) {
-      addAttachments(files);
+      // 1. Upload to backend
+      const uploadedDocs = await documentService.uploadDocuments(files);
+      
+      // 2. Add to chat store context (if necessary)
+      addAttachments(files); // Keeping existing behavior to show local files in UI, but could use uploaded metadata
+
+      // 3. Refresh the source tree to fetch new drive files
+      useSourceStore.getState().fetchSourceTree();
     }
   };
 

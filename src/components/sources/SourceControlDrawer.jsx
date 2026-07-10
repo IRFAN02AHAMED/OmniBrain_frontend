@@ -12,7 +12,13 @@ const SourceControlDrawer = () => {
     globalDocumentsEnabled,
     setGlobalDocumentsEnabled,
     chatDocumentsFolderEnabled,
-    setChatDocumentsFolderEnabled
+    setChatDocumentsFolderEnabled,
+    googleDriveEnabled,
+    setGoogleDriveEnabled,
+    jiraEnabled,
+    setJiraEnabled,
+    githubEnabled,
+    setGithubEnabled
   } = useSourceStore();
 
   const theme = useTheme();
@@ -130,6 +136,81 @@ const SourceControlDrawer = () => {
               <Switch
                 checked={chatDocumentsFolderEnabled}
                 onChange={(e) => setChatDocumentsFolderEnabled(e.target.checked)}
+                size="small"
+              />
+            </Box>
+
+            {/* Google Drive Toggle */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                py: 1,
+                px: 1.5,
+                borderRadius: '10px',
+                bgcolor: isDark ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.01)',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <MaterialIcon name="cloud" style={{ color: '#8B7CF6', fontSize: '20px' }} />
+                <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary', fontSize: '13.5px' }}>
+                  Google Drive
+                </Typography>
+              </Box>
+              <Switch
+                checked={googleDriveEnabled}
+                onChange={(e) => setGoogleDriveEnabled(e.target.checked)}
+                size="small"
+              />
+            </Box>
+
+            {/* Jira Toggle */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                py: 1,
+                px: 1.5,
+                borderRadius: '10px',
+                bgcolor: isDark ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.01)',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <MaterialIcon name="api" style={{ color: '#2684FF', fontSize: '20px' }} />
+                <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary', fontSize: '13.5px' }}>
+                  Jira
+                </Typography>
+              </Box>
+              <Switch
+                checked={jiraEnabled}
+                onChange={(e) => setJiraEnabled(e.target.checked)}
+                size="small"
+              />
+            </Box>
+
+            {/* GitHub Toggle */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                py: 1,
+                px: 1.5,
+                borderRadius: '10px',
+                bgcolor: isDark ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.01)',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <MaterialIcon name="code" style={{ color: '#F05032', fontSize: '20px' }} />
+                <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary', fontSize: '13.5px' }}>
+                  GitHub
+                </Typography>
+              </Box>
+              <Switch
+                checked={githubEnabled}
+                onChange={(e) => setGithubEnabled(e.target.checked)}
                 size="small"
               />
             </Box>

@@ -17,25 +17,25 @@ export const documentService = {
   },
 
   /**
-   * Simulates uploading document files.
+   * Upload document files to Google Drive.
    * @param {Array<File>} files 
    */
   uploadDocuments: async (files) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    // Real API integration:
-    // const formData = new FormData();
-    // files.forEach(file => formData.append('files', file));
-    // const response = await apiClient.post('/documents/upload', formData, {
-    //   headers: { 'Content-Type': 'multipart/form-data' }
-    // });
-    // return response.data;
+    const uploadedResults = [];
 
-    return files.map(file => ({
-      name: file.name,
-      size: file.size,
-      uploadedAt: new Date().toISOString()
-    }));
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await apiClient.post('/google/drive/upload', formData);
+        uploadedResults.push(response.data?.data || response.data);
+      } catch (err) {
+        console.error("Failed to upload file:", file.name, err);
+      }
+    }
+
+    return uploadedResults;
   }
 };
 export default documentService;
