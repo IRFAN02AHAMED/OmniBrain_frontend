@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Box, Typography, Button, Link } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 import MaterialIcon from '../components/common/MaterialIcon';
 import GlassCard from '../components/common/GlassCard';
 import { useAppStore } from '../store/store';
@@ -43,6 +44,7 @@ const AnimatedInput = styled('input', {
 
 const VerificationPage = () => {
   const { otpEmail, otpTimer, login, stopOtpTimer } = useAppStore();
+  const navigate = useNavigate();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [hasError, setHasError] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -90,6 +92,7 @@ const VerificationPage = () => {
         setTimeout(() => {
           stopOtpTimer();
           login();
+          navigate('/chat');
         }, 1200);
       } catch (err) {
         setHasError(true);
