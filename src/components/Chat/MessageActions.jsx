@@ -11,11 +11,11 @@ const MessageActions = () => {
         </IconButton>
       </Tooltip>
 
-      <Tooltip title="Share thread">
+      {/* <Tooltip title="Share thread">
         <IconButton size="small" sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
           <MaterialIcon name="share" style={{ fontSize: '18px' }} />
         </IconButton>
-      </Tooltip>
+      </Tooltip> */}
 
       <Tooltip title="Helpful (Thumbs up)">
         <IconButton size="small" sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
@@ -29,11 +29,11 @@ const MessageActions = () => {
         </IconButton>
       </Tooltip>
 
-      <Tooltip title="Regenerate response">
+      {/* <Tooltip title="Regenerate response">
         <IconButton size="small" sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
           <MaterialIcon name="refresh" style={{ fontSize: '18px' }} />
         </IconButton>
-      </Tooltip>
+      </Tooltip> */}
     </Box>
   );
 };

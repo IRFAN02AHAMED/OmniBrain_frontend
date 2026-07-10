@@ -15,6 +15,8 @@ const Sidebar = () => {
     addNewChat,
     logout
   } = useAppStore();
+  const displayName = user?.full_name || user?.name || 'OmniBrain User';
+  const avatarInitial = displayName.trim().charAt(0).toUpperCase() || 'O';
 
   const handleNavClick = (view) => {
     setCurrentView(view);
@@ -219,18 +221,23 @@ const Sidebar = () => {
         }}
       >
         <Avatar
-          src={user.avatarUrl}
-          alt={user.name}
+          alt={displayName}
           sx={{
             width: 38,
             height: 38,
             border: '2px solid #ffffff',
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            bgcolor: '#d9f3e7',
+            color: '#1f5f4a',
+            fontSize: '14px',
+            fontWeight: 800,
           }}
-        />
+        >
+          {avatarInitial}
+        </Avatar>
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
           <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '13px', lineHeight: 1.2 }} noWrap>
-            {user.name}
+            {displayName}
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '10px' }}>
             {user.plan}

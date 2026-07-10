@@ -1,20 +1,30 @@
 import React from 'react';
 import { Box, Typography, Avatar } from '@mui/material';
 import GlassCard from '../common/GlassCard';
+import { useAppStore } from '../../store/store';
 
 const UserMessageCard = ({ text, time }) => {
+  const user = useAppStore((state) => state.user);
+  const displayName = user?.full_name || user?.name || 'You';
+  const avatarInitial = displayName.trim().charAt(0).toUpperCase() || 'Y';
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'row-reverse', gap: 2, alignItems: 'flex-start' }}>
       <Avatar
-        src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&h=80"
-        alt="You"
+        alt={displayName}
         sx={{
           width: 36,
           height: 36,
           border: '2px solid #ffffff',
           boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? '#1f2937' : '#d9f3e7',
+          color: (theme) => theme.palette.mode === 'dark' ? '#F8FAFC' : '#1f5f4a',
+          fontSize: '14px',
+          fontWeight: 800,
         }}
-      />
+      >
+        {avatarInitial}
+      </Avatar>
       <GlassCard
         sx={{
           p: 2,
