@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Link, Snackbar, Alert } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useGoogleLogin } from '@react-oauth/google';
 import SidebarHeader from './SidebarHeader';
 import NewChatButton from './NewChatButton';
 import SidebarNavItem from './SidebarNavItem';
@@ -20,8 +19,6 @@ const AppSidebar = () => {
   } = useChatStore();
 
   const {
-    googleAccessToken,
-    setGoogleAccessToken,
     syncWithGoogleDrive,
     syncing,
     syncError,
@@ -36,26 +33,9 @@ const AppSidebar = () => {
     navigate(`/chat/${id}`);
   };
 
-  const loginGoogle = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setGoogleAccessToken(tokenResponse.access_token);
-      await syncWithGoogleDrive(tokenResponse.access_token);
-      setToastOpen(true);
-    },
-    onError: (err) => {
-      setSyncError('Google Login Failed: ' + (err?.message || 'Unknown error'));
-      setToastOpen(true);
-    },
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly'
-  });
-
   const handleSyncClick = async () => {
-    if (!googleAccessToken) {
-      loginGoogle();
-    } else {
-      await syncWithGoogleDrive(googleAccessToken);
-      setToastOpen(true);
-    }
+    await syncWithGoogleDrive();
+    setToastOpen(true);
   };
 
   const handleToastClose = () => {

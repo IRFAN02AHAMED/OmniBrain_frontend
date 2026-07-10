@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
 import { Box, Typography, Avatar, IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
 import GlassCard from '../common/GlassCard';
 import { useThemeStore } from '../../store/themeStore';
+import { useAppStore } from '../../store/store';
+import { useChatStore } from '../../store/chatStore';
+import useDocumentStore from '../../store/useDocumentStore';
+import useMindMapStore from '../../store/useMindMapStore';
 
 const UserProfileMenu = () => {
+  const navigate = useNavigate();
+  const logout = useAppStore((state) => state.logout);
+  const resetChatState = useChatStore((state) => state.resetChatState);
+  const resetDocumentStore = useDocumentStore((state) => state.resetStore);
+  const resetMindMap = useMindMapStore((state) => state.resetMindMap);
   const { mode, toggleTheme } = useThemeStore();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -15,6 +25,15 @@ const UserProfileMenu = () => {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    resetChatState();
+    resetDocumentStore();
+    resetMindMap();
+    logout();
+    handleClose();
+    navigate('/signin', { replace: true });
   };
 
   return (
@@ -95,7 +114,7 @@ const UserProfileMenu = () => {
         </MenuItem>
 
 
-        <MenuItem onClick={handleClose}>
+        <MenuItem onClick={handleLogout}>
           <ListItemIcon>
             <MaterialIcon name="logout" style={{ fontSize: '20px' }} />
           </ListItemIcon>

@@ -39,6 +39,8 @@ export const useAppStore = create((set, get) => ({
   login: () => set({ isLoggedIn: true, currentView: 'chat' }),
   logout: () => {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('omnibrain-documents');
+    localStorage.removeItem('omnibrain-mindmap');
     set({ isLoggedIn: false, currentView: 'signin' });
   },
 

@@ -16,6 +16,17 @@ export const useChatStore = create((set, get) => ({
   setActiveChatId: (id) => set({ activeChatId: id, activeRoute: 'chat' }),
   setChatInput: (input) => set({ chatInput: input }),
   setChatError: (chatError) => set({ chatError }),
+  resetChatState: () => set({
+    chats: [],
+    messages: {},
+    activeChatId: null,
+    chatInput: '',
+    uploadedAttachments: [],
+    activeRoute: 'chat',
+    loadingChats: false,
+    sendingMessage: false,
+    chatError: null,
+  }),
 
   renameChat: (chatId, newTitle) => set((state) => ({
     chats: state.chats.map((c) => c.id === chatId ? { ...c, title: newTitle } : c)
@@ -66,33 +77,96 @@ export const useChatStore = create((set, get) => ({
     set({ sendingMessage: true, chatError: null });
 
     try {
-      const response = await chatService.sendMessage({
+      const pendingAssistantId = `pending-${Date.now()}`;
+      let streamedSessionId = activeChatId;
+
+      await chatService.streamMessage({
         chatId: activeChatId,
         text: trimmedText,
         title: trimmedText.length > 50 ? `${trimmedText.slice(0, 50)}...` : trimmedText,
-      });
+        onEvent: (event) => {
+          if (event.type === 'session') {
+            const response = {
+              session: event.session,
+              userMessage: {
+                id: String(event.user_message.id),
+                sender: 'user',
+                text: event.user_message.content,
+                time: event.user_message.created_at
+                  ? new Date(event.user_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : '',
+              },
+            };
+            streamedSessionId = String(response.session.id);
 
-      set((state) => {
-        const sessionId = response.session.id;
-        const existingChat = state.chats.find((chat) => chat.id === sessionId);
-        const chats = existingChat
-          ? state.chats.map((chat) => (chat.id === sessionId ? response.session : chat))
-          : [response.session, ...state.chats];
+            set((state) => {
+              const existingChat = state.chats.find((chat) => chat.id === streamedSessionId);
+              const formattedSession = {
+                id: String(response.session.id),
+                title: response.session.title,
+                time: response.session.updated_at || response.session.last_message_at || response.session.created_at || 'Just now',
+                messageCount: response.session.message_count || 0,
+              };
+              const chats = existingChat
+                ? state.chats.map((chat) => (chat.id === streamedSessionId ? formattedSession : chat))
+                : [formattedSession, ...state.chats];
 
-        return {
-          chats,
-          activeChatId: sessionId,
-          messages: {
-            ...state.messages,
-            [sessionId]: [
-              ...(state.messages[sessionId] || []),
-              response.userMessage,
-              response.assistantMessage,
-            ],
-          },
-          chatInput: '',
-          uploadedAttachments: [],
-        };
+              return {
+                chats,
+                activeChatId: streamedSessionId,
+                messages: {
+                  ...state.messages,
+                  [streamedSessionId]: [
+                    ...(state.messages[streamedSessionId] || []),
+                    response.userMessage,
+                    {
+                      id: pendingAssistantId,
+                      sender: 'bot',
+                      text: '',
+                      time: '',
+                      isStreaming: true,
+                    },
+                  ],
+                },
+                chatInput: '',
+                uploadedAttachments: [],
+              };
+            });
+          }
+
+          if (event.type === 'delta' && streamedSessionId) {
+            set((state) => ({
+              messages: {
+                ...state.messages,
+                [streamedSessionId]: (state.messages[streamedSessionId] || []).map((message) =>
+                  message.id === pendingAssistantId
+                    ? { ...message, text: `${message.text}${event.content}` }
+                    : message
+                ),
+              },
+            }));
+          }
+
+          if (event.type === 'done' && streamedSessionId) {
+            set((state) => ({
+              messages: {
+                ...state.messages,
+                [streamedSessionId]: (state.messages[streamedSessionId] || []).map((message) =>
+                  message.id === pendingAssistantId
+                    ? {
+                        id: String(event.assistant_message.id),
+                        sender: 'bot',
+                        text: event.assistant_message.content,
+                        time: event.assistant_message.created_at
+                          ? new Date(event.assistant_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          : '',
+                      }
+                    : message
+                ),
+              },
+            }));
+          }
+        },
       });
     } catch (error) {
       set({ chatError: error?.response?.data?.detail || error.message || 'Failed to send message.' });

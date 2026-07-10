@@ -1,14 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import GLOBAL_DOCUMENTS from '../data/globalDocuments';
-import { listGoogleDriveFiles, getExtensionFromMimeType } from '../services/googleDriveService';
+import documentService from '../services/documentService';
 
 export const useDocumentStore = create(
   persist(
     (set, get) => ({
-      documents: GLOBAL_DOCUMENTS,
-      googleAccessToken: '',
+      documents: [],
       uploading: false,
+      loadingDocuments: false,
       error: null,
 
       // Sync specific state
@@ -16,7 +15,15 @@ export const useDocumentStore = create(
       syncError: null,
       syncMessage: null,
 
-      setGoogleAccessToken: (token) => set({ googleAccessToken: token }),
+      resetStore: () => set({
+        documents: [],
+        uploading: false,
+        loadingDocuments: false,
+        error: null,
+        syncing: false,
+        syncError: null,
+        syncMessage: null,
+      }),
 
       addDocument: (doc) => set((state) => ({
         documents: [...state.documents, doc]
@@ -28,57 +35,41 @@ export const useDocumentStore = create(
 
       setUploading: (uploading) => set({ uploading }),
       setError: (error) => set({ error }),
+      setDocuments: (documents) => set({ documents }),
+      setLoadingDocuments: (loadingDocuments) => set({ loadingDocuments }),
 
       setSyncing: (syncing) => set({ syncing }),
       setSyncError: (err) => set({ syncError: err }),
       setSyncMessage: (msg) => set({ syncMessage: msg }),
 
-      syncWithGoogleDrive: async (token) => {
-        const activeToken = token || get().googleAccessToken;
-        if (!activeToken) {
-          set({ syncError: 'No Google OAuth token set.' });
-          return;
+      loadDocuments: async () => {
+        set({ loadingDocuments: true, error: null });
+        try {
+          const documents = await documentService.getGlobalDocuments();
+          set({ documents });
+        } catch (err) {
+          set({ error: err?.response?.data?.detail || err.message || 'Failed to load documents.' });
+        } finally {
+          set({ loadingDocuments: false });
         }
+      },
 
+      syncWithGoogleDrive: async () => {
         set({ syncing: true, syncError: null, syncMessage: null });
         try {
-          const files = await listGoogleDriveFiles(activeToken);
-          const currentDocs = get().documents;
-          const currentIds = new Set(currentDocs.map(d => d.id));
-          const currentNames = new Set(currentDocs.map(d => d.name));
+          const result = await documentService.syncGlobalDocuments();
+          await get().loadDocuments();
 
-          const formatSize = (bytes) => {
-            if (!bytes) return '1.2 MB';
-            const kb = parseInt(bytes) / 1024;
-            if (kb < 1024) return `${Math.round(kb)} KB`;
-            return `${(kb / 1024).toFixed(1)} MB`;
-          };
-
-          const newDocs = [];
-          files.forEach((file) => {
-            // Avoid duplicates
-            if (currentIds.has(file.id) || currentNames.has(file.name)) return;
-
-            const ext = getExtensionFromMimeType(file.mimeType, file.name);
-
-            newDocs.push({
-              id: file.id,
-              name: file.name,
-              size: formatSize(file.size),
-              type: ext
-            });
+          const filesAdded = result?.results?.files_added ?? 0;
+          const filesSkipped = result?.results?.files_skipped ?? 0;
+          set({
+            syncMessage:
+              filesAdded > 0
+                ? `Synced ${filesAdded} new document(s) from Global Documents.${filesSkipped ? ` Skipped ${filesSkipped} already indexed file(s).` : ''}`
+                : 'Global Documents is already up to date. No new files were indexed.',
           });
-
-          if (newDocs.length > 0) {
-            set({
-              documents: [...currentDocs, ...newDocs],
-              syncMessage: `Successfully synced ${newDocs.length} new document(s) from Google Drive.`
-            });
-          } else {
-            set({ syncMessage: 'Already up to date. No new documents found to sync.' });
-          }
         } catch (err) {
-          set({ syncError: err.message || 'Failed to sync with Google Drive.' });
+          set({ syncError: err?.response?.data?.detail || err.message || 'Failed to sync with Google Drive.' });
         } finally {
           set({ syncing: false });
         }
@@ -87,7 +78,6 @@ export const useDocumentStore = create(
     {
       name: 'omnibrain-documents',
       partialize: (state) => ({
-        googleAccessToken: state.googleAccessToken,
         documents: state.documents,
       }),
     }
