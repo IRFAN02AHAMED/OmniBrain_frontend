@@ -252,20 +252,8 @@ const SignInPage = () => {
           zIndex: 10,
         }}
       >
-        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-          © 2024 OmniBrain AI. All rights reserved.
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 3 }}>
-          <Link href="#" sx={{ fontSize: '12px', color: 'text.secondary', textDecoration: 'none', '&:hover': { color: 'primary.main' } }}>Privacy Policy</Link>
-          <Link href="#" sx={{ fontSize: '12px', color: 'text.secondary', textDecoration: 'none', '&:hover': { color: 'primary.main' } }}>Terms of Service</Link>
-          <Link href="#" sx={{ fontSize: '12px', color: 'text.secondary', textDecoration: 'none', '&:hover': { color: 'primary.main' } }}>Contact</Link>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <MaterialIcon name="language" style={{ color: '#94A3B8', fontSize: '18px' }} />
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-            English (US)
-          </Typography>
-        </Box>
+
+
       </Box>
     </Box>
   );
