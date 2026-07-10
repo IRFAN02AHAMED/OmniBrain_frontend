@@ -6,6 +6,8 @@ import { useEffect } from 'react';
 import useMindMapStore from '../store/useMindMapStore';
 import { generateMindMap, getMindMap } from '../services/mindMapService';
 
+const activeLoads = new Set();
+
 /**
  * Call this hook at the top of MindMapPage.
  * It handles:
@@ -20,6 +22,8 @@ export function useMindMap(documentId = null, existingMindMapId = null) {
     useMindMapStore();
 
   useEffect(() => {
+    const loadKey = existingMindMapId ? `mindmap:${existingMindMapId}` : documentId ? `document:${documentId}` : null;
+
     // If already loaded for this doc, recompute and bail
     if (
       status === 'ready' &&
@@ -30,7 +34,16 @@ export function useMindMap(documentId = null, existingMindMapId = null) {
       return;
     }
 
+    if (!loadKey) {
+      return;
+    }
+
+    if (activeLoads.has(loadKey) || useMindMapStore.getState().status === 'loading') {
+      return;
+    }
+
     async function load() {
+      activeLoads.add(loadKey);
       setStatus('loading');
       try {
         let data;
@@ -45,10 +58,16 @@ export function useMindMap(documentId = null, existingMindMapId = null) {
         initializeMindMap(data);
       } catch (err) {
         setStatus('error', err?.message || 'Failed to generate mind map');
+      } finally {
+        activeLoads.delete(loadKey);
       }
     }
 
     load();
+
+    return () => {
+      activeLoads.delete(loadKey);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId, existingMindMapId]);
 }

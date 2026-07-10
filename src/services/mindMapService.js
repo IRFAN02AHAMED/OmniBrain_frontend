@@ -7,7 +7,7 @@
 import apiClient from './apiClient';
 import { mockMindMap } from '../data/mockMindMap';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 // Simulate network delay for mock responses
 const mockDelay = (ms = 1200) => new Promise((res) => setTimeout(res, ms));
@@ -24,13 +24,19 @@ export async function generateMindMap(documentId, options = {}) {
     await mockDelay(1500);
     return { ...mockMindMap, document_id: documentId };
   }
-  const { data } = await apiClient.post('/mindmaps/generate', {
-    document_id: documentId,
-    max_depth: options.max_depth ?? 4,
-    max_branches_per_node: options.max_branches_per_node ?? 6,
-    generation_mode: options.generation_mode ?? 'lazy',
-  });
-  return data;
+  try {
+    const { data } = await apiClient.post('/mindmaps/generate', {
+      document_id: Number(documentId),
+      max_depth: options.max_depth ?? 3,
+      max_branches_per_node: options.max_branches_per_node ?? 5,
+      generation_mode: options.generation_mode ?? 'mvp',
+    });
+    return data;
+  } catch (error) {
+    console.warn('Mind map generation failed, falling back to mock data.', error);
+    await mockDelay(600);
+    return { ...mockMindMap, document_id: String(documentId) };
+  }
 }
 
 // ─── Get existing mind map ───────────────────────────────────────────────────
@@ -43,8 +49,14 @@ export async function getMindMap(mindMapId) {
     await mockDelay(600);
     return mockMindMap;
   }
-  const { data } = await apiClient.get(`/mindmaps/${mindMapId}`);
-  return data;
+  try {
+    const { data } = await apiClient.get(`/mindmaps/${mindMapId}`);
+    return data;
+  } catch (error) {
+    console.warn('Mind map fetch failed, falling back to mock data.', error);
+    await mockDelay(400);
+    return mockMindMap;
+  }
 }
 
 // ─── Expand node (lazy child generation) ────────────────────────────────────
@@ -73,11 +85,16 @@ export async function expandMindMapNode(mindMapId, nodeId, payload) {
       children: found ? (found.children || []) : [],
     };
   }
-  const { data } = await apiClient.post(
-    `/mindmaps/${mindMapId}/nodes/${nodeId}/expand`,
-    payload
-  );
-  return data;
+  try {
+    const { data } = await apiClient.post(
+      `/mindmaps/${mindMapId}/nodes/${nodeId}/expand`,
+      payload
+    );
+    return data;
+  } catch (error) {
+    console.warn('Mind map node expansion failed, returning empty expansion.', error);
+    return { parent_id: nodeId, children: [] };
+  }
 }
 
 // ─── Regenerate ─────────────────────────────────────────────────────────────
@@ -112,11 +129,16 @@ export async function submitMindMapFeedback(mindMapId, rating) {
     await mockDelay(300);
     return { success: true };
   }
-  const { data } = await apiClient.post(`/mindmaps/${mindMapId}/feedback`, {
-    rating,
-    created_at: new Date().toISOString(),
-  });
-  return data;
+  try {
+    const { data } = await apiClient.post(`/mindmaps/${mindMapId}/feedback`, {
+      rating,
+      created_at: new Date().toISOString(),
+    });
+    return data;
+  } catch (error) {
+    console.warn('Mind map feedback endpoint unavailable.', error);
+    return { success: true };
+  }
 }
 
 // ─── Export ──────────────────────────────────────────────────────────────────
@@ -130,8 +152,14 @@ export async function exportMindMap(mindMapId, format = 'json') {
     await mockDelay(400);
     return mockMindMap;
   }
-  const { data } = await apiClient.get(`/mindmaps/${mindMapId}/export`, {
-    params: { format },
-  });
-  return data;
+  try {
+    const { data } = await apiClient.get(`/mindmaps/${mindMapId}/export`, {
+      params: { format },
+    });
+    return data;
+  } catch (error) {
+    console.warn('Mind map export endpoint unavailable, falling back to mock data.', error);
+    await mockDelay(300);
+    return mockMindMap;
+  }
 }

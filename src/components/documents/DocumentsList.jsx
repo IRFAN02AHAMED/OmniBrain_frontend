@@ -1,17 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, Paper, TableRow, IconButton, Button, Tooltip,
+  TableHead, Paper, TableRow, IconButton, Button,
   CircularProgress, Alert, Snackbar
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
-import useMindMapStore from '../../store/useMindMapStore';
 import useDocumentStore from '../../store/useDocumentStore';
 import documentService from '../../services/documentService';
 
 const DocumentsList = () => {
-  const navigate = useNavigate();
   const {
     documents,
     addDocument,
@@ -32,12 +29,6 @@ const DocumentsList = () => {
   useEffect(() => {
     loadDocuments();
   }, [loadDocuments]);
-
-  const handleGenerateMindMap = (doc) => {
-    useMindMapStore.getState().resetMindMap();
-    useMindMapStore.setState({ documentId: doc.id, status: 'idle' });
-    navigate('/mindmap');
-  };
 
   const handleUploadClick = () => {
     if (fileInputRef.current) {
@@ -96,7 +87,7 @@ const DocumentsList = () => {
             Global Documents
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Manage documents uploaded across your workspaces. Click <strong>Generate Mind Map</strong> to visualize any document as an interactive knowledge graph.
+            Manage documents uploaded across your workspaces.
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -202,32 +193,6 @@ const DocumentsList = () => {
                 </TableCell>
                 <TableCell align="right">
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-                    {/* Generate Mind Map */}
-                    <Tooltip title="Generate Mind Map">
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleGenerateMindMap(doc)}
-                        startIcon={<MaterialIcon name="account_tree" style={{ fontSize: '16px !important' }} />}
-                        sx={{
-                          fontSize: '12px',
-                          py: 0.5,
-                          px: 1.5,
-                          borderRadius: '8px',
-                          textTransform: 'none',
-                          borderColor: (theme) => theme.palette.mode === 'dark' ? '#4A5363' : 'rgba(0,0,0,0.12)',
-                          color: (theme) => theme.palette.mode === 'dark' ? '#A8A8A8' : 'text.secondary',
-                          '&:hover': {
-                            borderColor: '#6C5CE7',
-                            color: '#6C5CE7',
-                            bgcolor: 'rgba(108,92,231,0.06)',
-                          },
-                        }}
-                      >
-                        Mind Map
-                      </Button>
-                    </Tooltip>
-
                     {/* Delete */}
                     <IconButton size="small" onClick={() => removeDocument(doc.id)} sx={{ color: 'text.secondary', '&:hover': { color: '#fc929b' } }}>
                       <MaterialIcon name="delete" style={{ fontSize: '18px' }} />

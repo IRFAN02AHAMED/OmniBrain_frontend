@@ -11,7 +11,6 @@ import VerificationPage from './pages/VerificationPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import ChatPage from './pages/ChatPage';
 import DocumentsPage from './pages/DocumentsPage';
-import MindMapPage from './pages/MindMapPage';
 
 function App() {
   const { mode } = useThemeStore();
@@ -38,7 +37,7 @@ function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/chat/:sessionId" element={<ChatPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
-          <Route path="/mindmap" element={<MindMapPage />} />
+          <Route path="/mindmap" element={<Navigate to="/documents" replace />} />
         </Route>
 
         {/* Catch-all: redirect root to /signin */}
