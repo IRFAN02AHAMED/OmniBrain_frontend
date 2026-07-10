@@ -1,27 +1,69 @@
-import React from 'react';
-import { Box, Typography, Link } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Link, Snackbar, Alert } from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
 import SidebarHeader from './SidebarHeader';
 import NewChatButton from './NewChatButton';
 import SidebarNavItem from './SidebarNavItem';
 import RecentChatItem from './RecentChatItem';
 import UserProfileMenu from './UserProfileMenu';
 import { useChatStore } from '../../store/chatStore';
+import useDocumentStore from '../../store/useDocumentStore';
 
 const AppSidebar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const {
     chats,
     activeChatId,
     setActiveChatId,
-    activeRoute,
-    setActiveRoute
   } = useChatStore();
 
-  const handleNav = (route) => {
-    setActiveRoute(route);
-  };
+  const {
+    googleAccessToken,
+    setGoogleAccessToken,
+    syncWithGoogleDrive,
+    syncing,
+    syncError,
+    syncMessage,
+    setSyncError,
+    setSyncMessage
+  } = useDocumentStore();
+
+  const [toastOpen, setToastOpen] = useState(false);
 
   const handleRecentClick = (id) => {
     setActiveChatId(id);
+    navigate('/chat');
+  };
+
+  const loginGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setGoogleAccessToken(tokenResponse.access_token);
+      await syncWithGoogleDrive(tokenResponse.access_token);
+      setToastOpen(true);
+    },
+    onError: (err) => {
+      setSyncError('Google Login Failed: ' + (err?.message || 'Unknown error'));
+      setToastOpen(true);
+    },
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly'
+  });
+
+  const handleSyncClick = async () => {
+    if (!googleAccessToken) {
+      loginGoogle();
+    } else {
+      await syncWithGoogleDrive(googleAccessToken);
+      setToastOpen(true);
+    }
+  };
+
+  const handleToastClose = () => {
+    setToastOpen(false);
+    setSyncError(null);
+    setSyncMessage(null);
   };
 
   return (
@@ -49,22 +91,18 @@ const AppSidebar = () => {
       {/* Primary Links */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 3 }}>
         <SidebarNavItem
-          icon="chat"
-          label="Chats"
-          active={activeRoute === 'chat'}
-          onClick={() => handleNav('chat')}
-        />
-        <SidebarNavItem
           icon="description"
           label="Documents"
-          active={activeRoute === 'documents'}
-          onClick={() => handleNav('documents')}
+          active={location.pathname === '/documents'}
+          onClick={() => navigate('/documents')}
         />
+
         <SidebarNavItem
           icon="cloud_sync"
-          label="Sync with Drive"
+          label={syncing ? "Syncing..." : "Sync with Drive"}
           active={false}
-          onClick={() => {}}
+          onClick={handleSyncClick}
+          disabled={syncing}
         />
       </Box>
 
@@ -91,7 +129,7 @@ const AppSidebar = () => {
               key={chat.id}
               title={chat.title}
               time={chat.time}
-              active={activeRoute === 'chat' && activeChatId === chat.id}
+              active={location.pathname === '/chat' && activeChatId === chat.id}
               onClick={() => handleRecentClick(chat.id)}
             />
           ))}
@@ -119,6 +157,21 @@ const AppSidebar = () => {
 
       {/* User Section at the bottom */}
       <UserProfileMenu />
+
+      {/* Sync Status Notifications */}
+      <Snackbar
+        open={toastOpen && (!!syncMessage || !!syncError)}
+        autoHideDuration={6000}
+        onClose={handleToastClose}
+      >
+        <Alert
+          onClose={handleToastClose}
+          severity={syncError ? "error" : "success"}
+          sx={{ width: '100%' }}
+        >
+          {syncError || syncMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

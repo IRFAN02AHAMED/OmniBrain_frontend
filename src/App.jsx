@@ -1,39 +1,39 @@
 import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { lightTheme, darkTheme } from './theme/index';
 import { useThemeStore } from './store/themeStore';
-import { useAppStore } from './store/store';
-import { useChatStore } from './store/chatStore';
+import ProtectedRoute from './components/routing/ProtectedRoute';
+
 import SignInPage from './pages/SignInPage';
 import VerificationPage from './pages/VerificationPage';
 import ChatPage from './pages/ChatPage';
 import DocumentsPage from './pages/DocumentsPage';
+import MindMapPage from './pages/MindMapPage';
 
 function App() {
   const { mode } = useThemeStore();
-  const { currentView, isLoggedIn } = useAppStore();
-  const { activeRoute } = useChatStore();
-
-  const renderView = () => {
-    if (!isLoggedIn) {
-      if (currentView === 'verify') {
-        return <VerificationPage />;
-      }
-      return <SignInPage />;
-    }
-
-    if (activeRoute === 'documents') {
-      return <DocumentsPage />;
-    }
-    return <ChatPage />;
-  };
-
   const activeMuiTheme = mode === 'dark' ? darkTheme : lightTheme;
 
   return (
     <ThemeProvider theme={activeMuiTheme}>
       <CssBaseline />
-      {renderView()}
+      <Routes>
+        {/* Public routes */}
+        <Route path="/signin" element={<SignInPage />} />
+        <Route path="/verify" element={<VerificationPage />} />
+
+        {/* Protected routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/mindmap" element={<MindMapPage />} />
+        </Route>
+
+        {/* Catch-all: redirect root to /signin */}
+        <Route path="/" element={<Navigate to="/signin" replace />} />
+        <Route path="*" element={<Navigate to="/signin" replace />} />
+      </Routes>
     </ThemeProvider>
   );
 }

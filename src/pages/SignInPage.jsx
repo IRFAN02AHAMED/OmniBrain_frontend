@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, TextField, InputAdornment, Link, IconButton, Tooltip } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
 import MaterialIcon from '../components/common/MaterialIcon';
 import GlassCard from '../components/common/GlassCard';
 import { useAppStore } from '../store/store';
 import { useThemeStore } from '../store/themeStore';
+import useDocumentStore from '../store/useDocumentStore';
 import authService from '../services/authService';
 
 const SignInPage = () => {
-  const { setCurrentView, startOtpTimer } = useAppStore();
+  const { startOtpTimer } = useAppStore();
+  const { setGoogleAccessToken } = useDocumentStore();
+  const navigate = useNavigate();
   const { mode, toggleTheme } = useThemeStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +27,7 @@ const SignInPage = () => {
     try {
       await authService.sendOtp(email);
       startOtpTimer();
-      setCurrentView('verify');
+      navigate('/verify');
     } catch (err) {
       console.error(err);
     } finally {
@@ -30,16 +35,26 @@ const SignInPage = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
-    try {
-      await authService.googleLogin('dummy_token');
-      useAppStore.getState().login();
-    } catch (err) {
-      console.error(err);
-    } finally {
+  const loginGoogle = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
       setGoogleLoading(false);
-    }
+      setGoogleAccessToken(tokenResponse.access_token);
+      useAppStore.getState().login();
+      navigate('/chat');
+    },
+    onError: (error) => {
+      setGoogleLoading(false);
+      console.error('Google Login Failed', error);
+    },
+    onNonOAuthError: () => {
+      setGoogleLoading(false);
+    },
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly'
+  });
+
+  const handleGoogleLogin = () => {
+    setGoogleLoading(true);
+    loginGoogle();
   };
 
   return (
