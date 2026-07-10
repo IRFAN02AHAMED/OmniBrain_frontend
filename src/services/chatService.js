@@ -1,17 +1,29 @@
 import apiClient from './apiClient';
-import { RECENT_CHATS, CHAT_MESSAGES, AVAILABLE_MODELS } from '../dummy/dummyData';
+import { AVAILABLE_MODELS } from '../dummy/dummyData';
+
+const formatSession = (session) => ({
+  id: String(session.id),
+  title: session.title,
+  time: session.updated_at || session.last_message_at || session.created_at || 'Just now',
+  messageCount: session.message_count || 0,
+});
+
+const formatMessage = (message) => ({
+  id: String(message.id),
+  sender: message.role === 'assistant' ? 'bot' : 'user',
+  text: message.content,
+  time: message.created_at
+    ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : '',
+});
 
 export const chatService = {
   /**
    * Fetch list of recent chat conversations.
    */
   getRecentChats: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    // Real API implementation:
-    // const response = await apiClient.get('/chats');
-    // return response.data;
-
-    return RECENT_CHATS;
+    const response = await apiClient.get('/chats');
+    return response.data.map(formatSession);
   },
 
   /**
@@ -19,12 +31,8 @@ export const chatService = {
    * @param {string} chatId
    */
   getChatMessages: async (chatId) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    // Real API implementation:
-    // const response = await apiClient.get(`/chats/${chatId}/messages`);
-    // return response.data;
-
-    return CHAT_MESSAGES[chatId] || [];
+    const response = await apiClient.get(`/chats/${chatId}/messages`);
+    return response.data.map(formatMessage);
   },
 
   /**
@@ -33,17 +41,17 @@ export const chatService = {
    * @param {string} text
    * @param {string} modelId
    */
-  sendMessage: async (chatId, text, modelId) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    // Real API implementation:
-    // const response = await apiClient.post(`/chats/${chatId}/messages`, { text, modelId });
-    // return response.data;
+  sendMessage: async ({ chatId, text, title }) => {
+    const response = await apiClient.post('/chats/send', {
+      session_id: chatId ? Number(chatId) : null,
+      content: text,
+      title,
+    });
 
     return {
-      id: `msg-${Date.now()}`,
-      sender: 'bot',
-      text: `Mock bot reply to: "${text}" via ${modelId}`,
-      timestamp: new Date().toISOString()
+      session: formatSession(response.data.session),
+      userMessage: formatMessage(response.data.user_message),
+      assistantMessage: formatMessage(response.data.assistant_message),
     };
   },
 

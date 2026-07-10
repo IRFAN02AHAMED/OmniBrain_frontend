@@ -7,6 +7,7 @@ import ProtectedRoute from './components/routing/ProtectedRoute';
 
 import SignInPage from './pages/SignInPage';
 import VerificationPage from './pages/VerificationPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import ChatPage from './pages/ChatPage';
 import DocumentsPage from './pages/DocumentsPage';
 import MindMapPage from './pages/MindMapPage';
@@ -22,10 +23,12 @@ function App() {
         {/* Public routes */}
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/verify" element={<VerificationPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/chat" element={<ChatPage />} />
+          <Route path="/chat/:sessionId" element={<ChatPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/mindmap" element={<MindMapPage />} />
         </Route>

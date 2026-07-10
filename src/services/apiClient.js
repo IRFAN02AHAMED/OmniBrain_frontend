@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base API URL configuration. This can be configured via environment variables.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.omnibrain.ai/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

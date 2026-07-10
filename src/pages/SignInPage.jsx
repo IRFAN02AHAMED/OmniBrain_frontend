@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, TextField, InputAdornment, Link, IconButton, Tooltip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useGoogleLogin } from '@react-oauth/google';
 import MaterialIcon from '../components/common/MaterialIcon';
 import GlassCard from '../components/common/GlassCard';
 import { useAppStore } from '../store/store';
 import { useThemeStore } from '../store/themeStore';
-import useDocumentStore from '../store/useDocumentStore';
 import authService from '../services/authService';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const SignInPage = () => {
   const { startOtpTimer } = useAppStore();
-  const { setGoogleAccessToken } = useDocumentStore();
   const navigate = useNavigate();
   const { mode, toggleTheme } = useThemeStore();
   const [email, setEmail] = useState('');
@@ -35,26 +35,13 @@ const SignInPage = () => {
     }
   };
 
-  const loginGoogle = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      setGoogleLoading(false);
-      setGoogleAccessToken(tokenResponse.access_token);
-      useAppStore.getState().login();
-      navigate('/chat');
-    },
-    onError: (error) => {
-      setGoogleLoading(false);
-      console.error('Google Login Failed', error);
-    },
-    onNonOAuthError: () => {
-      setGoogleLoading(false);
-    },
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly'
-  });
-
   const handleGoogleLogin = () => {
+    if (!GOOGLE_CLIENT_ID) {
+      console.error('Missing VITE_GOOGLE_CLIENT_ID for Google sign-in.');
+      return;
+    }
     setGoogleLoading(true);
-    loginGoogle();
+    window.location.href = `${API_BASE_URL}/auth/google/login/v2`;
   };
 
   return (
@@ -129,7 +116,7 @@ const SignInPage = () => {
           <Button
             fullWidth
             onClick={handleGoogleLogin}
-            disabled={googleLoading}
+            disabled={googleLoading || !GOOGLE_CLIENT_ID}
             variant="outlined"
             startIcon={
               <img
@@ -153,6 +140,15 @@ const SignInPage = () => {
           >
             {googleLoading ? 'Connecting...' : 'Continue with Google'}
           </Button>
+
+          {!GOOGLE_CLIENT_ID && (
+            <Typography
+              variant="caption"
+              sx={{ mt: 1.5, display: 'block', color: 'error.main', textAlign: 'center' }}
+            >
+              Google sign-in is disabled. Set `VITE_GOOGLE_CLIENT_ID` in the frontend `.env`.
+            </Typography>
+          )}
 
           <Box sx={{ position: 'relative', my: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Box sx={{ position: 'absolute', width: '100%', borderTop: '1px solid rgba(192, 200, 195, 0.3)' }} />

@@ -17,7 +17,6 @@ const AppSidebar = () => {
   const {
     chats,
     activeChatId,
-    setActiveChatId,
   } = useChatStore();
 
   const {
@@ -34,8 +33,7 @@ const AppSidebar = () => {
   const [toastOpen, setToastOpen] = useState(false);
 
   const handleRecentClick = (id) => {
-    setActiveChatId(id);
-    navigate('/chat');
+    navigate(`/chat/${id}`);
   };
 
   const loginGoogle = useGoogleLogin({
@@ -129,7 +127,7 @@ const AppSidebar = () => {
               key={chat.id}
               title={chat.title}
               time={chat.time}
-              active={location.pathname === '/chat' && activeChatId === chat.id}
+              active={location.pathname === `/chat/${chat.id}` && activeChatId === chat.id}
               onClick={() => handleRecentClick(chat.id)}
             />
           ))}
