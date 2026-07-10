@@ -1,14 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from '@mui/material';
 import MaterialIcon from '../common/MaterialIcon';
 import { useConnectorStore } from '../../store/connectorStore';
+import connectorService from '../../services/connectorService';
 
 const ConnectorModal = () => {
   const { modalOpen, activeConnector, closeModal, toggleConnector } = useConnectorStore();
+  const [submitting, setSubmitting] = useState(false);
 
   if (!activeConnector) return null;
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
+    if (activeConnector.id === 'github' || activeConnector.id === 'jira') {
+      try {
+        setSubmitting(true);
+        const result = await connectorService.connectConnector(activeConnector.id);
+        if (result?.connectUrl) {
+          window.location.href = result.connectUrl;
+          return;
+        }
+      } finally {
+        setSubmitting(false);
+      }
+    }
+
     toggleConnector(activeConnector.id);
     closeModal();
   };
@@ -76,13 +91,14 @@ const ConnectorModal = () => {
           onClick={handleConnect}
           variant="contained"
           color={isConnected ? 'error' : 'primary'}
+          disabled={submitting}
           sx={{
             borderRadius: '10px',
             textTransform: 'none',
             px: 3,
           }}
         >
-          {isConnected ? 'Disconnect' : 'Connect'}
+          {submitting ? 'Redirecting...' : isConnected ? 'Disconnect' : 'Connect'}
         </Button>
       </DialogActions>
     </Dialog>

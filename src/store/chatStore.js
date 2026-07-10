@@ -5,6 +5,7 @@ export const useChatStore = create((set, get) => ({
   chats: [],
   messages: {},
   activeChatId: null,
+  startingNewChat: false,
   chatInput: '',
   uploadedAttachments: [],
   activeRoute: 'chat', // 'chat' or 'documents'
@@ -13,13 +14,23 @@ export const useChatStore = create((set, get) => ({
   chatError: null,
 
   setActiveRoute: (route) => set({ activeRoute: route }),
-  setActiveChatId: (id) => set({ activeChatId: id, activeRoute: 'chat' }),
+  setActiveChatId: (id) => set({ activeChatId: id, activeRoute: 'chat', startingNewChat: false }),
   setChatInput: (input) => set({ chatInput: input }),
   setChatError: (chatError) => set({ chatError }),
+  startNewChat: () => set({
+    activeChatId: null,
+    startingNewChat: true,
+    activeRoute: 'chat',
+    chatInput: '',
+    uploadedAttachments: [],
+    chatError: null,
+  }),
+  clearNewChatIntent: () => set({ startingNewChat: false }),
   resetChatState: () => set({
     chats: [],
     messages: {},
     activeChatId: null,
+    startingNewChat: false,
     chatInput: '',
     uploadedAttachments: [],
     activeRoute: 'chat',
@@ -33,12 +44,7 @@ export const useChatStore = create((set, get) => ({
   })),
 
   addNewChat: () => {
-    set({
-      activeChatId: null,
-      activeRoute: 'chat',
-      chatInput: '',
-      uploadedAttachments: [],
-    });
+    get().startNewChat();
   },
 
   loadChats: async () => {
@@ -114,6 +120,7 @@ export const useChatStore = create((set, get) => ({
               return {
                 chats,
                 activeChatId: streamedSessionId,
+                startingNewChat: false,
                 messages: {
                   ...state.messages,
                   [streamedSessionId]: [
@@ -125,6 +132,7 @@ export const useChatStore = create((set, get) => ({
                       text: '',
                       time: '',
                       isStreaming: true,
+                      knowledgeSource: null,
                     },
                   ],
                 },
@@ -160,6 +168,13 @@ export const useChatStore = create((set, get) => ({
                         time: event.assistant_message.created_at
                           ? new Date(event.assistant_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                           : '',
+                        knowledgeSource:
+                          event.assistant_message.model_name === 'rag-kb' ||
+                          event.assistant_message.used_global_documents ||
+                          event.assistant_message.used_session_documents ||
+                          (event.assistant_message.source_chunks || []).length > 0
+                            ? 'kb'
+                            : 'model',
                       }
                     : message
                 ),

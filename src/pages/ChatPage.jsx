@@ -13,7 +13,15 @@ import { useSourceStore } from '../store/sourceStore';
 const ChatPage = () => {
   const navigate = useNavigate();
   const { sessionId } = useParams();
-  const { activeChatId, messages, loadChats, loadMessages, setActiveChatId } = useChatStore();
+  const {
+    activeChatId,
+    startingNewChat,
+    messages,
+    loadChats,
+    loadMessages,
+    setActiveChatId,
+    clearNewChatIntent,
+  } = useChatStore();
   const sourceDrawerOpen = useSourceStore((state) => state.isOpen);
 
   const theme = useTheme();
@@ -25,6 +33,13 @@ const ChatPage = () => {
   }, [loadChats]);
 
   useEffect(() => {
+    if (startingNewChat) {
+      if (!sessionId && activeChatId !== null) {
+        setActiveChatId(null);
+      }
+      return;
+    }
+
     if (sessionId && sessionId !== activeChatId) {
       setActiveChatId(sessionId);
       return;
@@ -33,13 +48,19 @@ const ChatPage = () => {
     if (!sessionId && activeChatId !== null) {
       setActiveChatId(null);
     }
-  }, [activeChatId, sessionId, setActiveChatId]);
+  }, [activeChatId, sessionId, setActiveChatId, startingNewChat]);
 
   useEffect(() => {
-    if (activeChatId && !sessionId && activeMessages.length > 0) {
+    if (startingNewChat && !sessionId) {
+      clearNewChatIntent();
+    }
+  }, [clearNewChatIntent, sessionId, startingNewChat]);
+
+  useEffect(() => {
+    if (!startingNewChat && activeChatId && !sessionId && activeMessages.length > 0) {
       navigate(`/chat/${activeChatId}`, { replace: true });
     }
-  }, [activeChatId, activeMessages.length, navigate, sessionId]);
+  }, [activeChatId, activeMessages.length, navigate, sessionId, startingNewChat]);
 
   useEffect(() => {
     if (activeChatId && !messages[activeChatId]) {

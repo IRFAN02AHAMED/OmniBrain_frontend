@@ -15,6 +15,12 @@ const formatMessage = (message) => ({
   time: message.created_at
     ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '',
+  knowledgeSource:
+    message.role === 'assistant'
+      ? message.model_name === 'rag-kb' || message.used_global_documents || message.used_session_documents || (message.source_chunks || []).length > 0
+        ? 'kb'
+        : 'model'
+      : null,
 });
 
 export const chatService = {

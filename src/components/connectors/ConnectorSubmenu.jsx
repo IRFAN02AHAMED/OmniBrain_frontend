@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import MaterialIcon from '../common/MaterialIcon';
 import { useConnectorStore } from '../../store/connectorStore';
 
 const ConnectorSubmenu = ({ anchorEl, open, onClose }) => {
-  const { connectors, openModal } = useConnectorStore();
+  const { connectors, openModal, loadConnectors } = useConnectorStore();
+
+  useEffect(() => {
+    loadConnectors();
+  }, [loadConnectors]);
 
   const handleConnectorClick = (connector) => {
     openModal(connector);

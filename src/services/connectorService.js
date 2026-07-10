@@ -1,44 +1,54 @@
 import apiClient from './apiClient';
 import { AVAILABLE_CONNECTORS } from '../data/connectors';
 
+const OAUTH_CONNECTORS = new Set(['github', 'jira']);
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 export const connectorService = {
-  /**
-   * Fetches lists of active and available integrations.
-   */
   getConnectors: async () => {
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    
-    // Real API integration:
-    // const response = await apiClient.get('/connectors');
-    // return response.data;
-    
-    return AVAILABLE_CONNECTORS;
+    const connectors = [...AVAILABLE_CONNECTORS];
+
+    const statusRequests = await Promise.allSettled([
+      apiClient.get('/connectors/github/status'),
+      apiClient.get('/connectors/jira/status'),
+    ]);
+
+    const githubStatus = statusRequests[0].status === 'fulfilled'
+      ? !!statusRequests[0].value?.data?.data?.connected
+      : false;
+    const jiraStatus = statusRequests[1].status === 'fulfilled'
+      ? !!statusRequests[1].value?.data?.data?.connected
+      : false;
+
+    return connectors.map((connector) => {
+      if (connector.id === 'github') {
+        return { ...connector, connected: githubStatus };
+      }
+      if (connector.id === 'jira') {
+        return { ...connector, connected: jiraStatus };
+      }
+      return connector;
+    });
   },
 
-  /**
-   * Links a third-party application integration.
-   */
   connectConnector: async (connectorId) => {
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    if (!OAUTH_CONNECTORS.has(connectorId)) {
+      return { id: connectorId, connected: false, unsupported: true };
+    }
 
-    // Real API integration:
-    // const response = await apiClient.post(`/connectors/${connectorId}/connect`);
-    // return response.data;
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('Please sign in before connecting a connector.');
+    }
 
-    return { id: connectorId, connected: true };
+    return {
+      id: connectorId,
+      connectUrl: `${API_BASE_URL}/connectors/${connectorId}/connect?token=${encodeURIComponent(token)}`,
+    };
   },
 
-  /**
-   * Deauthorizes a third-party application integration.
-   */
   disconnectConnector: async (connectorId) => {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    // Real API integration:
-    // const response = await apiClient.post(`/connectors/${connectorId}/disconnect`);
-    // return response.data;
-
-    return { id: connectorId, connected: false };
-  }
+    return { id: connectorId, connected: false, unsupported: true };
+  },
 };
 export default connectorService;

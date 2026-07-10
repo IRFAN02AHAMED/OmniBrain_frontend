@@ -6,10 +6,10 @@ import { useChatStore } from '../../store/chatStore';
 
 const NewChatButton = () => {
   const navigate = useNavigate();
-  const addNewChat = useChatStore((state) => state.addNewChat);
+  const startNewChat = useChatStore((state) => state.startNewChat);
 
   const handleClick = () => {
-    addNewChat();
+    startNewChat();
     navigate('/chat');
   };
 
