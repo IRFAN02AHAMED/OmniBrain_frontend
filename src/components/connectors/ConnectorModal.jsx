@@ -2,15 +2,14 @@ import React from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from '@mui/material';
 import MaterialIcon from '../common/MaterialIcon';
 import { useConnectorStore } from '../../store/connectorStore';
-import connectorService from '../../services/connectorService';
 
 const ConnectorModal = () => {
   const { modalOpen, activeConnector, closeModal, toggleConnector } = useConnectorStore();
 
   if (!activeConnector) return null;
 
-  const handleConnect = async () => {
-    await connectorService.connectConnector(activeConnector.id);
+  const handleConnect = () => {
+    toggleConnector(activeConnector.id);
     closeModal();
   };
 

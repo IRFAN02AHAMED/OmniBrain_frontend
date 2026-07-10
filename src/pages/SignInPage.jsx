@@ -30,10 +30,16 @@ const SignInPage = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setGoogleLoading(true);
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-    window.location.href = `${API_BASE_URL}/auth/google/login/v2`;
+    try {
+      await authService.googleLogin('dummy_token');
+      useAppStore.getState().login();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (

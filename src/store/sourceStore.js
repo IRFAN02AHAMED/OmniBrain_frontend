@@ -87,37 +87,15 @@ const countEnabledFiles = (node) => {
   return node.children.reduce((acc, child) => acc + countEnabledFiles(child), 0);
 };
 
-// Helper to collect selected leaf IDs
-const collectSelectedIds = (node, ids) => {
-  if (!node) return;
-  if (!node.children || node.children.length === 0) {
-    if (node.toggled) ids.push(node.id);
-  } else {
-    node.children.forEach(child => collectSelectedIds(child, ids));
-  }
-};
-
 export const useSourceStore = create((set, get) => ({
   isOpen: false,
   globalDocumentsEnabled: true,
   chatDocumentsFolderEnabled: true,
-  googleDriveEnabled: true,
-  jiraEnabled: false,
-  githubEnabled: false,
   sourceTree: JSON.parse(JSON.stringify(INITIAL_SOURCE_TREE)), // Deep clone
 
   setIsOpen: (isOpen) => set({ isOpen }),
   setGlobalDocumentsEnabled: (enabled) => set({ globalDocumentsEnabled: enabled }),
   setChatDocumentsFolderEnabled: (enabled) => set({ chatDocumentsFolderEnabled: enabled }),
-  setGoogleDriveEnabled: (enabled) => set({ googleDriveEnabled: enabled }),
-  setJiraEnabled: (enabled) => set({ jiraEnabled: enabled }),
-  setGithubEnabled: (enabled) => set({ githubEnabled: enabled }),
-
-  fetchSourceTree: async () => {
-    const { sourceService } = await import('../services/sourceService');
-    const tree = await sourceService.getSourceTree();
-    set({ sourceTree: tree });
-  },
 
   toggleNode: (nodeId, checked) => set((state) => {
     const newTree = JSON.parse(JSON.stringify(state.sourceTree));
@@ -137,10 +115,7 @@ export const useSourceStore = create((set, get) => ({
     return {
       sourceTree: resetTree,
       globalDocumentsEnabled: true,
-      chatDocumentsFolderEnabled: true,
-      googleDriveEnabled: true,
-      jiraEnabled: false,
-      githubEnabled: false
+      chatDocumentsFolderEnabled: true
     };
   }),
 
@@ -160,16 +135,6 @@ export const useSourceStore = create((set, get) => ({
       count -= countEnabledFiles(chatNode);
     }
     return Math.max(0, count);
-  },
-
-  getSelectedFileIds: () => {
-    const ids = [];
-    const { sourceTree } = get();
-    const driveNode = sourceTree.children?.find(c => c.id === 'root-drive' || c.id === 'folder-drive');
-    if (driveNode) {
-      collectSelectedIds(driveNode, ids);
-    }
-    return ids;
   }
 }));
 export default useSourceStore;

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base API URL configuration. This can be configured via environment variables.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.omnibrain.ai/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -14,7 +14,7 @@ const apiClient = axios.create({
 // Request Interceptor: Attach Auth Token if exists
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('auth_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,11 +31,8 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle specific status codes (e.g. 401 Unauthorized)
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('access_token');
-      // Force reload to kick user back to login via AuthGuard
-      if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
-        window.location.href = '/';
-      }
+      localStorage.removeItem('auth_token');
+      // Dispatch redirect to login or store reset if necessary
     }
     return Promise.reject(error);
   }

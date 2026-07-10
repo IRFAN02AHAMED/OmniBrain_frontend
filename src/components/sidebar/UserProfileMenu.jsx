@@ -3,11 +3,9 @@ import { Box, Typography, Avatar, IconButton, Menu, MenuItem, ListItemIcon, List
 import MaterialIcon from '../common/MaterialIcon';
 import GlassCard from '../common/GlassCard';
 import { useThemeStore } from '../../store/themeStore';
-import { useAppStore } from '../../store/store';
 
 const UserProfileMenu = () => {
   const { mode, toggleTheme } = useThemeStore();
-  const { logout } = useAppStore();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
@@ -97,10 +95,7 @@ const UserProfileMenu = () => {
         </MenuItem>
 
 
-        <MenuItem onClick={() => {
-          handleClose();
-          logout();
-        }}>
+        <MenuItem onClick={handleClose}>
           <ListItemIcon>
             <MaterialIcon name="logout" style={{ fontSize: '20px' }} />
           </ListItemIcon>
