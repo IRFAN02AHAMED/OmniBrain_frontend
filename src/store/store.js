@@ -37,7 +37,10 @@ export const useAppStore = create((set, get) => ({
     set({ timerIntervalId: null });
   },
   login: () => set({ isLoggedIn: true, currentView: 'chat' }),
-  logout: () => set({ isLoggedIn: false, currentView: 'signin' }),
+  logout: () => {
+    localStorage.removeItem('auth_token');
+    set({ isLoggedIn: false, currentView: 'signin' });
+  },
 
   // Chat State
   models: AVAILABLE_MODELS,

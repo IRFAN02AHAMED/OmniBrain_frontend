@@ -9,16 +9,16 @@ import { useChatStore } from '../store/chatStore';
 const MindMapPage = () => {
   const navigate = useNavigate();
   const { documentId, mindMapId } = useMindMapStore();
-  const { setChatInput } = useChatStore();
+  const { setChatInput, activeChatId } = useChatStore();
 
   const handleClose = () => {
-    navigate('/chat');
+    navigate(activeChatId ? `/chat/${activeChatId}` : '/chat');
   };
 
   const handleAskAI = (label) => {
     // Pre-fill chat and navigate to chat view
     setChatInput(`Explain this topic in more detail: ${label}`);
-    navigate('/chat');
+    navigate(activeChatId ? `/chat/${activeChatId}` : '/chat');
   };
 
   return (

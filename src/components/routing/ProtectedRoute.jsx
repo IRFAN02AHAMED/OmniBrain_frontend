@@ -8,7 +8,9 @@ import { useAppStore } from '../../store/store';
  */
 const ProtectedRoute = () => {
   const isLoggedIn = useAppStore((s) => s.isLoggedIn);
-  if (!isLoggedIn) {
+  const hasToken = !!localStorage.getItem('auth_token');
+
+  if (!isLoggedIn && !hasToken) {
     return <Navigate to="/signin" replace />;
   }
   return <Outlet />;

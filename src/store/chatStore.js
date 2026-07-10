@@ -1,75 +1,104 @@
 import { create } from 'zustand';
-import MOCK_CHATS from '../data/chats';
-import MOCK_MESSAGES from '../data/messages';
+import chatService from '../services/chatService';
 
 export const useChatStore = create((set, get) => ({
-  chats: MOCK_CHATS,
-  messages: MOCK_MESSAGES,
-  activeChatId: 'chat-architecture',
+  chats: [],
+  messages: {},
+  activeChatId: null,
   chatInput: '',
   uploadedAttachments: [],
   activeRoute: 'chat', // 'chat' or 'documents'
+  loadingChats: false,
+  sendingMessage: false,
+  chatError: null,
 
   setActiveRoute: (route) => set({ activeRoute: route }),
   setActiveChatId: (id) => set({ activeChatId: id, activeRoute: 'chat' }),
   setChatInput: (input) => set({ chatInput: input }),
+  setChatError: (chatError) => set({ chatError }),
 
   renameChat: (chatId, newTitle) => set((state) => ({
     chats: state.chats.map((c) => c.id === chatId ? { ...c, title: newTitle } : c)
   })),
 
   addNewChat: () => {
-    const newId = `chat-${Date.now()}`;
-    const newChat = { id: newId, title: 'New Chat Workspace', time: 'Just now' };
-    set((state) => ({
-      chats: [newChat, ...state.chats],
-      activeChatId: newId,
+    set({
+      activeChatId: null,
       activeRoute: 'chat',
-      messages: {
-        ...state.messages,
-        [newId]: []
-      }
-    }));
+      chatInput: '',
+      uploadedAttachments: [],
+    });
   },
 
-  sendMessage: (text) => {
-    const { activeChatId, messages } = get();
-    if (!activeChatId) return;
+  loadChats: async () => {
+    set({ loadingChats: true, chatError: null });
+    try {
+      const chats = await chatService.getRecentChats();
+      set({ chats });
+    } catch (error) {
+      set({ chatError: error?.response?.data?.detail || error.message || 'Failed to load chats.' });
+    } finally {
+      set({ loadingChats: false });
+    }
+  },
 
-    const userMsg = {
-      id: `msg-${Date.now()}`,
-      sender: 'user',
-      text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    const currentChatMsgs = messages[activeChatId] || [];
-    const updatedMessages = [...currentChatMsgs, userMsg];
-
-    set((state) => ({
-      messages: {
-        ...state.messages,
-        [activeChatId]: updatedMessages
-      },
-      chatInput: '',
-      uploadedAttachments: [] // Clear composer attachments on send
-    }));
-
-    // Mock response trigger
-    setTimeout(() => {
-      const botMsg = {
-        id: `msg-${Date.now() + 1}`,
-        sender: 'bot',
-        text: `Based on your request "${text}", here is an intelligent analysis generated from your active documents and sources.`,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
+  loadMessages: async (chatId) => {
+    if (!chatId) return;
+    set({ chatError: null });
+    try {
+      const chatMessages = await chatService.getChatMessages(chatId);
       set((state) => ({
         messages: {
           ...state.messages,
-          [activeChatId]: [...(state.messages[activeChatId] || []), botMsg]
-        }
+          [chatId]: chatMessages,
+        },
       }));
-    }, 1200);
+    } catch (error) {
+      set({ chatError: error?.response?.data?.detail || error.message || 'Failed to load messages.' });
+    }
+  },
+
+  sendMessage: async (text) => {
+    const trimmedText = (text || '').trim();
+    if (!trimmedText) return;
+
+    const { activeChatId } = get();
+    set({ sendingMessage: true, chatError: null });
+
+    try {
+      const response = await chatService.sendMessage({
+        chatId: activeChatId,
+        text: trimmedText,
+        title: trimmedText.length > 50 ? `${trimmedText.slice(0, 50)}...` : trimmedText,
+      });
+
+      set((state) => {
+        const sessionId = response.session.id;
+        const existingChat = state.chats.find((chat) => chat.id === sessionId);
+        const chats = existingChat
+          ? state.chats.map((chat) => (chat.id === sessionId ? response.session : chat))
+          : [response.session, ...state.chats];
+
+        return {
+          chats,
+          activeChatId: sessionId,
+          messages: {
+            ...state.messages,
+            [sessionId]: [
+              ...(state.messages[sessionId] || []),
+              response.userMessage,
+              response.assistantMessage,
+            ],
+          },
+          chatInput: '',
+          uploadedAttachments: [],
+        };
+      });
+    } catch (error) {
+      set({ chatError: error?.response?.data?.detail || error.message || 'Failed to send message.' });
+    } finally {
+      set({ sendingMessage: false });
+    }
   },
 
   addAttachments: (files) => set((state) => ({

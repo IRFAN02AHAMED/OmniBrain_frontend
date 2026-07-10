@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, useTheme, useMediaQuery } from '@mui/material';
+import { useNavigate, useParams } from 'react-router-dom';
 import AppSidebar from '../components/sidebar/AppSidebar';
 import ChatHeader from '../components/chat/ChatHeader';
 import ChatMessageList from '../components/chat/ChatMessageList';
@@ -10,12 +11,41 @@ import { useChatStore } from '../store/chatStore';
 import { useSourceStore } from '../store/sourceStore';
 
 const ChatPage = () => {
-  const { activeChatId, messages } = useChatStore();
+  const navigate = useNavigate();
+  const { sessionId } = useParams();
+  const { activeChatId, messages, loadChats, loadMessages, setActiveChatId } = useChatStore();
   const sourceDrawerOpen = useSourceStore((state) => state.isOpen);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const activeMessages = activeChatId ? messages[activeChatId] || [] : [];
+
+  useEffect(() => {
+    loadChats();
+  }, [loadChats]);
+
+  useEffect(() => {
+    if (sessionId && sessionId !== activeChatId) {
+      setActiveChatId(sessionId);
+      return;
+    }
+
+    if (!sessionId && activeChatId !== null) {
+      setActiveChatId(null);
+    }
+  }, [activeChatId, sessionId, setActiveChatId]);
+
+  useEffect(() => {
+    if (activeChatId && !sessionId && activeMessages.length > 0) {
+      navigate(`/chat/${activeChatId}`, { replace: true });
+    }
+  }, [activeChatId, activeMessages.length, navigate, sessionId]);
+
+  useEffect(() => {
+    if (activeChatId && !messages[activeChatId]) {
+      loadMessages(activeChatId);
+    }
+  }, [activeChatId, loadMessages, messages]);
 
   return (
     <Box

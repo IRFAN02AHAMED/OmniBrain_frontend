@@ -1,17 +1,24 @@
 import React from 'react';
 import { Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import MaterialIcon from '../common/MaterialIcon';
 import { useChatStore } from '../../store/chatStore';
 
 const NewChatButton = () => {
+  const navigate = useNavigate();
   const addNewChat = useChatStore((state) => state.addNewChat);
+
+  const handleClick = () => {
+    addNewChat();
+    navigate('/chat');
+  };
 
   return (
     <Button
       variant="contained"
       fullWidth
       startIcon={<MaterialIcon name="add" style={{ fontSize: '20px' }} />}
-      onClick={addNewChat}
+      onClick={handleClick}
       sx={{
         py: 1.25,
         mb: 2.5,
