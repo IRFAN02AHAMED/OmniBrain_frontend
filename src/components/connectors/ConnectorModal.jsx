@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box, Alert } from '@mui/material';
 import MaterialIcon from '../common/MaterialIcon';
 import { useConnectorStore } from '../../store/connectorStore';
 import connectorService from '../../services/connectorService';
@@ -7,6 +7,7 @@ import connectorService from '../../services/connectorService';
 const ConnectorModal = () => {
   const { modalOpen, activeConnector, closeModal, toggleConnector } = useConnectorStore();
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   if (!activeConnector) return null;
 
@@ -14,14 +15,18 @@ const ConnectorModal = () => {
     if (activeConnector.id === 'github' || activeConnector.id === 'jira') {
       try {
         setSubmitting(true);
+        setErrorMessage('');
         const result = await connectorService.connectConnector(activeConnector.id);
         if (result?.connectUrl) {
           window.location.href = result.connectUrl;
           return;
         }
+      } catch (error) {
+        setErrorMessage(error?.message || `Failed to start ${activeConnector.name} connection.`);
       } finally {
         setSubmitting(false);
       }
+      return;
     }
 
     toggleConnector(activeConnector.id);
@@ -67,10 +72,15 @@ const ConnectorModal = () => {
       </DialogTitle>
 
       <DialogContent sx={{ py: 1.5 }}>
+        {errorMessage && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {errorMessage}
+          </Alert>
+        )}
         <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '14.5px', lineHeight: 1.5 }}>
           {isConnected
             ? `Are you sure you want to disconnect your ${activeConnector.name} integration? This will revoke access to its documents in this workspace.`
-            : `Grant OmniBrain AI permissions to sync folders, files, or messages from your ${activeConnector.name} account to query documents.`}
+            : `Grant OmniBrain AI permissions to access your ${activeConnector.name} account through OAuth so chat can use live connector data.`}
         </Typography>
       </DialogContent>
 
